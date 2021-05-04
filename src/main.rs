@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-const CONNECT_LIMIT: usize = 1;
+const CONNECT_LIMIT: usize = 8;
 const BUFFER_SIZE: usize = 128;
 static CONNECTS: AtomicUsize = AtomicUsize::new(0);
 
