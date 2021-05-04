@@ -3,7 +3,7 @@ authors = ["Rick Yang <rick68@gmail.com>"]
 description = "A echo server written in Rust"
 license = "MPL-2.0"
 name = "echo"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 
 [dependencies]
