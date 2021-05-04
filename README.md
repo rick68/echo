@@ -1,2 +1,2 @@
 # echo
-Echo server
+A echo server written in Rust
