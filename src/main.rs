@@ -6,17 +6,22 @@ use std::{
     time::Duration,
 };
 
+use log::info;
+
 const CONNECT_LIMIT: usize = 8;
 const BUFFER_SIZE: usize = 128;
 static CONNECTS: AtomicUsize = AtomicUsize::new(0);
 
 fn main() -> io::Result<()> {
+    env_logger::init();
+
     if let Ok(listener) = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 7)) {
         let mut iter = listener.incoming();
         loop {
             if CONNECTS.load(Ordering::Relaxed) < CONNECT_LIMIT {
                 CONNECTS.fetch_add(1, Ordering::Relaxed);
                 if let Some(Ok(mut stream)) = iter.next() {
+                    info!("Establish a connection from {}", stream.peer_addr()?);
                     spawn(move || {
                         let mut buf = [0; BUFFER_SIZE];
                         loop {
