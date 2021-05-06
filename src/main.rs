@@ -1,3 +1,5 @@
+#![feature(thread_id_value)]
+
 use std::{
     io::{self, Read, Write},
     net::{Ipv4Addr, TcpListener},
@@ -21,7 +23,9 @@ fn main() -> io::Result<()> {
             if CONNECTS.load(Ordering::Relaxed) < CONNECT_LIMIT {
                 CONNECTS.fetch_add(1, Ordering::Relaxed);
                 if let Some(Ok(mut stream)) = iter.next() {
-                    info!("Establish a connection from {}", stream.peer_addr()?);
+                    let remote = stream.peer_addr()?;
+                    info!("Establish a connection from {}", remote);
+
                     spawn(move || {
                         let mut buf = [0; BUFFER_SIZE];
                         loop {
@@ -29,13 +33,20 @@ fn main() -> io::Result<()> {
                                 Ok(0) => break,
                                 Ok(n) => match stream.write(&buf[0..n]) {
                                     Ok(0) => break,
-                                    Ok(_) => (),
+                                    Ok(_) => info!(
+                                        "{} {}",
+                                        remote,
+                                        String::from_utf8_lossy(&buf[0..n])
+                                            .trim_end_matches(['\r', '\n'].as_ref())
+                                    ),
                                     Err(_) => break,
                                 },
                                 Err(_) => break,
                             }
                         }
                         CONNECTS.fetch_sub(1, Ordering::Relaxed);
+
+                        info!("connected by {}", remote);
                     });
                 }
             } else {
