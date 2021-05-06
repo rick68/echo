@@ -1,5 +1,3 @@
-#![feature(thread_id_value)]
-
 use std::{
     io::{self, ErrorKind, Read, Write},
     net::{Ipv4Addr, TcpListener},
