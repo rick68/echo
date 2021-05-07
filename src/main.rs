@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use log::info;
+use log::{info, warn, LevelFilter};
 
 const CONNECT_LIMIT: usize = 8;
 const BUFFER_SIZE: usize = 128;
@@ -15,7 +15,10 @@ const CONNCETION_TIMEOUT: u64 = 30; // seconds
 static CONNECTS: AtomicUsize = AtomicUsize::new(0);
 
 fn main() -> io::Result<()> {
-    env_logger::init();
+    env_logger::Builder::new()
+        .format_timestamp(None)
+        .filter(None, LevelFilter::Info)
+        .init();
 
     if let Ok(listener) = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 7)) {
         let mut iter = listener.incoming();
@@ -46,7 +49,7 @@ fn main() -> io::Result<()> {
                                 },
                                 Err(e) => {
                                     if e.kind() == ErrorKind::WouldBlock {
-                                        info!("{} Connection timeout", remote);
+                                        warn!("{} Connection timeout", remote);
                                     }
                                     break;
                                 }
@@ -64,5 +67,6 @@ fn main() -> io::Result<()> {
             }
         }
     }
+
     Ok(())
 }
