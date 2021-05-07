@@ -26,6 +26,7 @@ fn main() -> io::Result<()> {
     loop {
         if CONNECTS.load(Ordering::Relaxed) < CONNECT_LIMIT {
             CONNECTS.fetch_add(1, Ordering::Relaxed);
+
             if let Some(Ok(mut stream)) = iter.next() {
                 let remote = stream.peer_addr()?;
                 info!("{} Establish a connection", remote);
@@ -67,6 +68,4 @@ fn main() -> io::Result<()> {
             sleep(Duration::from_secs(1));
         }
     }
-
-    Ok(())
 }
