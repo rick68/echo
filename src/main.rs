@@ -10,7 +10,7 @@ use log::{info, warn, LevelFilter};
 
 const CONNECT_LIMIT: usize = 8;
 const BUFFER_SIZE: usize = 128;
-const CONNCETION_TIMEOUT: u64 = 30; // seconds
+const CONNECTION_TIMEOUT: u64 = 30; // seconds
 
 static CONNECTS: AtomicUsize = AtomicUsize::new(0);
 
@@ -33,7 +33,7 @@ fn main() -> io::Result<()> {
                 spawn(move || -> io::Result<()> {
                     let mut buf = [0; BUFFER_SIZE];
 
-                    stream.set_read_timeout(Some(Duration::from_secs(CONNCETION_TIMEOUT)))?;
+                    stream.set_read_timeout(Some(Duration::from_secs(CONNECTION_TIMEOUT)))?;
 
                     loop {
                         match stream.read(&mut buf) {
