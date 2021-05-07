@@ -20,52 +20,56 @@ fn main() -> io::Result<()> {
         .filter(None, LevelFilter::Info)
         .init();
 
-    if let Ok(listener) = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 7)) {
-        let mut iter = listener.incoming();
-        loop {
-            if CONNECTS.load(Ordering::Relaxed) < CONNECT_LIMIT {
-                CONNECTS.fetch_add(1, Ordering::Relaxed);
-                if let Some(Ok(mut stream)) = iter.next() {
-                    let remote = stream.peer_addr()?;
-                    info!("{} Establish a connection", remote);
+    match TcpListener::bind((Ipv4Addr::UNSPECIFIED, 7)) {
+        Ok(listener) => {
+            let mut iter = listener.incoming();
+            loop {
+                if CONNECTS.load(Ordering::Relaxed) < CONNECT_LIMIT {
+                    CONNECTS.fetch_add(1, Ordering::Relaxed);
+                    if let Some(Ok(mut stream)) = iter.next() {
+                        let remote = stream.peer_addr()?;
+                        info!("{} Establish a connection", remote);
 
-                    spawn(move || -> io::Result<()> {
-                        let mut buf = [0; BUFFER_SIZE];
+                        spawn(move || -> io::Result<()> {
+                            let mut buf = [0; BUFFER_SIZE];
 
-                        stream.set_read_timeout(Some(Duration::from_secs(CONNCETION_TIMEOUT)))?;
+                            stream
+                                .set_read_timeout(Some(Duration::from_secs(CONNCETION_TIMEOUT)))?;
 
-                        loop {
-                            match stream.read(&mut buf) {
-                                Ok(0) => break,
-                                Ok(n) => match stream.write(&buf[0..n]) {
+                            loop {
+                                match stream.read(&mut buf) {
                                     Ok(0) => break,
-                                    Ok(_) => info!(
-                                        "{} {}",
-                                        remote,
-                                        String::from_utf8_lossy(&buf[0..n])
-                                            .trim_end_matches(['\r', '\n'].as_ref())
-                                    ),
-                                    Err(_) => break,
-                                },
-                                Err(e) => {
-                                    if e.kind() == ErrorKind::WouldBlock {
-                                        warn!("{} Connection timeout", remote);
+                                    Ok(n) => match stream.write(&buf[0..n]) {
+                                        Ok(0) => break,
+                                        Ok(_) => info!(
+                                            "{} {}",
+                                            remote,
+                                            String::from_utf8_lossy(&buf[0..n])
+                                                .trim_end_matches(['\r', '\n'].as_ref())
+                                        ),
+                                        Err(_) => break,
+                                    },
+                                    Err(e) => {
+                                        if e.kind() == ErrorKind::WouldBlock {
+                                            warn!("{} Connection timeout", remote);
+                                        }
+                                        break;
                                     }
-                                    break;
                                 }
                             }
-                        }
 
-                        CONNECTS.fetch_sub(1, Ordering::Relaxed);
-                        info!("{} Disconnected", remote);
+                            CONNECTS.fetch_sub(1, Ordering::Relaxed);
+                            info!("{} Disconnected", remote);
 
-                        Ok(())
-                    });
+                            Ok(())
+                        });
+                    }
+                } else {
+                    sleep(Duration::from_secs(1));
                 }
-            } else {
-                sleep(Duration::from_secs(1));
             }
         }
+        Err(e) => eprintln!("{}", e),
     }
 
     Ok(())
