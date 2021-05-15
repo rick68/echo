@@ -1,6 +1,6 @@
 use std::{
     io::{self, ErrorKind, Read, Write},
-    net::{Ipv4Addr, TcpListener},
+    net::{Ipv4Addr, TcpListener, UdpSocket},
     sync::atomic::{AtomicUsize, Ordering},
     thread::{sleep, spawn},
     time::Duration,
@@ -19,6 +19,21 @@ fn main() -> io::Result<()> {
         .format_timestamp(None)
         .filter(None, LevelFilter::Info)
         .init();
+
+    spawn(|| -> io::Result<()> {
+        let socket = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 7))?;
+        let mut buf = [0; BUFFER_SIZE];
+
+        loop {
+            let (n, remote) = socket.recv_from(&mut buf)?;
+            socket.send_to(&buf[0..n], remote)?;
+            info!(
+                "udp://{} {}",
+                remote,
+                String::from_utf8_lossy(&buf[0..n]).trim_end_matches(['\r', '\n'].as_ref())
+            );
+        }
+    });
 
     let listener = TcpListener::bind((Ipv4Addr::UNSPECIFIED, 7))?;
     let mut iter = listener.incoming();
@@ -42,7 +57,7 @@ fn main() -> io::Result<()> {
                             Ok(n) => match stream.write(&buf[0..n]) {
                                 Ok(0) => break,
                                 Ok(_) => info!(
-                                    "{} {}",
+                                    "tcp://{} {}",
                                     remote,
                                     String::from_utf8_lossy(&buf[0..n])
                                         .trim_end_matches(['\r', '\n'].as_ref())
