@@ -42,7 +42,7 @@ fn main() -> io::Result<()> {
                             Ok(n) => match stream.write(&buf[0..n]) {
                                 Ok(0) => break,
                                 Ok(_) => info!(
-                                    "{} {}",
+                                    "tcp://{} {}",
                                     remote,
                                     String::from_utf8_lossy(&buf[0..n])
                                         .trim_end_matches(['\r', '\n'].as_ref())
