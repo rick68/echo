@@ -4,8 +4,9 @@ description = "A echo server written in Rust"
 license = "MPL-2.0"
 name = "echo"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 env_logger = "0.8.3"
 log = "0.4.14"
+tokio = {version = "1.21.0", features = ["io-util", "macros", "net", "rt", "signal"]}
